@@ -12,6 +12,8 @@ import openpyxl
 import dropbox # dropbox
 from uuid import getnode as get_mac # mac address
 import json
+from fake_useragent import UserAgent
+import random
 
 form_class = uic.loadUiType("login_dialog.ui")[0]
 form_class2 = uic.loadUiType("solution.ui")[0]
@@ -50,7 +52,7 @@ class MyLogin(QDialog, form_class):
                 QMessageBox.about(self, '정픔 인증 완료', '정품 인증되었습니다.')
 
             else:
-                print(dic[serial_number])
+                #print(dic[serial_number])
                 QMessageBox.about(self, '정픔 인증 실패', '이미 등록된 시리얼 키입니다.')
                 sys.exit()
         else:
@@ -294,7 +296,7 @@ class MyWindow(QMainWindow, form_class2):
 
             check_email_1 = []
             try:
-                for j in (a for a in range(2, int(last_page))): # generator
+                for j in (a for a in range(2, int(last_page)+1)): # generator
                     try:
                         detail_url = menu_url[i] + '&userDisplay=50&search.page={}'.format(j)
                         response = requests.get(detail_url)
@@ -358,7 +360,7 @@ class MyWindow(QMainWindow, form_class2):
                     except:
                         continue
             except ValueError:
-                QMessageBox.about(self, 'Message', '숫자만 입력해주세요.')
+                QMessageBox.about(self, 'Message', '숫자를 입력해주세요.')
                 break
         ## when we click button, all we have to do is send to line Edit's content. so, we don't need to line edit
 
@@ -475,6 +477,8 @@ class MyWindow(QMainWindow, form_class2):
             page_number = int(soup_1.select('strong.itemSubjectBoldfont')[0].get_text()) #int 중요함
 
 
+
+
             if category_n == 0:
                 item = self.listWidget2_1.item(6)
                 item.setText("전체 글 {}개 수집 진행 중...".format(page_number))
@@ -494,30 +498,51 @@ class MyWindow(QMainWindow, form_class2):
                 time.sleep(0.5)
                 url_2 = "http://blog.naver.com/PostList.nhn?from=postList&blogId={}&categoryNo={}&currentPage={}".format(self.blog_name, category_n, j)
                 soup_2 = self.call_url(url_2)
-                a = soup_2.select('iframe')
 
-                for b in a:
-                    if 'CommentFrm' in str(b):
-                        c = b
-                #type(c)  bs4.element.Tag라는 type이군. 그래서 None으로 뜨는 듯!
 
-                p = re.compile('\d+') # \D는 숫자 뻬고, \d는 0-9 숫자 +는 1개 이상, *는 0개 이상
-                log_number = int(p.findall(c['id'])[0]) #0383496209 이런 거
 
-                url_3 = 'http://blog.naver.com/CommentList.nhn?blogId={}&logNo={}&currentPage=&isMemolog=false&focusingCommentNo=&showLastPage=true&shortestContentAreaWidth=false'.format(self.blog_name,log_number)
-                soup_3 = self.call_url(url_3)
+                a= soup_2.select('p.url')
+                b= a[0]['id']
+                c= b.split('_')
 
-                id_list = soup_3.select('.nick')
+                log_number = int(c[2]) #0383496209 이런 거
 
-                for each in id_list:
+                b_url2 = 'https://blog.naver.com/PostView.nhn?blogId={}&logNo={}'.format(self.blog_name, log_number)
+                response = requests.get(b_url2)
+                html = response.text
+                b_soup = BeautifulSoup(html, 'lxml')
+
+                zzz = str(b_soup).split('var')
+
+                for i in range(len(zzz)):
+                    if 'blogNo' in zzz[i]:
+                        yyy = zzz[i]
+
+                p = re.compile('blogNo\D*\d+')
+                xxx = p.findall(yyy)
+                q = re.compile('\d+')
+                blog_no = int(q.findall(xxx[0])[0])
+
+
+                header_2 = {
+                'Referer':'https://blog.naver.com/PostList.nhn?blogId=&widgetTypeCall=true&directAccess=true'
+                }
+
+                res2 = requests.get('https://apis.naver.com/commentBox/cbox/web_naver_list_jsonp.json?ticket=blog&pool=cbox9&lang=ko&objectId={a}_201_{b}&groupId={a}'.format(a=blog_no, b= log_number), headers=header_2)
+
+
+                json_data = res2.text.replace("_callback(","")
+                json_data = json_data.replace(");","")
+
+                js = json.loads(json_data) #str -> python으로 바꾼 것. 근데 본래 python dic 타입이였으므로 가능한 것임.
+
+
+                for commentList in js['result']['commentList']:
                     try:
-                        a = each['href'].split('/')
-
-                        if self.radio2_2.isChecked():
-                            email = a[3]
+                        if self.radio2_2.isChecked(): #radio...
+                            email = commentList['profileUserId']
                         else:
-                            email = a[3] + '@naver.com'
-
+                            email = commentList['profileUserId']+'@naver.com'
                         self.save_email.append(email)
 
 
@@ -776,7 +801,7 @@ class MyWindow(QMainWindow, form_class2):
         QApplication.processEvents()
 
         item = self.listWidget1_1.item(4)
-        item.setText('블로그 활성유저 이메일 수집 중...')
+        item.setText('블로그/카페 활성유저 이메일 수집 중...')
         QApplication.processEvents()
 
 
@@ -789,25 +814,53 @@ class MyWindow(QMainWindow, form_class2):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             'Referer': page_url,
         }
+        test_url = 'https://search.naver.com/search.naver?where=post&ie=utf8&query=test&start=1&date_option=6'
+        test_response = requests.get(test_url, headers = headers)
+        test_html = test_response.text
+        test_soup = BeautifulSoup(test_html, 'lxml')
+
+        if '비정상적인 검색' in str(test_soup):
+
+            ua = UserAgent()
+            ua.random
+            page_url = 'https://www.naver.com'
+
+            headers = {
+                'User-Agent': str(ua.random),
+                "Accept-Encoding": "gzip, deflate",
+                'Referer': page_url,
+            }
 
 
-        ### 블로그 시작 ###
+
+        #### 블로그/카페 통합 버전 ####
 
         for j in range(100):
 
+            if j % 10 == 0: # 20번(네이버 10 + 카페 10) 검색마다 한 번씩
+                r_url = 'https://search.naver.com/search.naver?where=post&ie=utf8&query={}&start=1&date_option=6'.format(random.randrange(100)).encode('utf-8')
+                r_response = requests.get(r_url, headers = headers)
+
+
+
             item = self.listWidget1_1.item(7)
-            item.setText('{}/200페이지'.format(j+1))
+            item.setText('{}/100페이지'.format(j+1))
             QApplication.processEvents()
 
 
-            time.sleep(1.5)
+            #time.sleep(3)
 
-            b_page_number = j*10 + 1
+            page_number = j*10 + 1
 
-            b_url = 'https://search.naver.com/search.naver?where=post&ie=utf8&query={}&start={}&date_option=6'.format(keyword, b_page_number).encode('utf-8')
+            b_url = 'https://search.naver.com/search.naver?where=post&ie=utf8&query={}&start={}&date_option=6'.format(keyword, page_number).encode('utf-8')
             response = requests.get(b_url, headers = headers)
             html = response.text
             soup = BeautifulSoup(html, 'lxml')
+
+
+            if '비정상적인 검색' in str(soup):
+                QMessageBox.about(self, 'Message', '아이피가 일시적으로 차단되었습니다. 몇 시간 쉬었다 진행해보세요.')
+                break
 
 
             for each_content in soup.select('div.thumb-rollover a.sp_thmb'):
@@ -818,7 +871,7 @@ class MyWindow(QMainWindow, form_class2):
                         b_info = b_info_3.split('.blog.me/')
                         blog_id = b_info[0][7:]
                         log_no = b_info[1]
-                        if self.radio1_2.isChecked():
+                        if self.radio2.isChecked():
                             b_host_email = blog_id
                         else:
                             b_host_email = blog_id + '@naver.com'
@@ -835,64 +888,78 @@ class MyWindow(QMainWindow, form_class2):
                             b_host_email = blog_id + '@naver.com'
                         self.save_email.append(b_host_email)
 
-                    time.sleep(0.3)
+                    #time.sleep(1)
 
-                    url_3 = 'http://blog.naver.com/CommentList.nhn?blogId={}&logNo={}&currentPage=&isMemolog=false&focusingCommentNo=&showLastPage=true&shortestContentAreaWidth=false'.format(blog_id, log_no)
-                    response = requests.get(url_3)
+
+                    b_url2 = 'https://blog.naver.com/PostView.nhn?blogId={}&logNo={}'.format(blog_id, log_no)
+                    response = requests.get(b_url2)
                     html = response.text
-                    soup = BeautifulSoup(html, 'lxml')
+                    b_soup = BeautifulSoup(html, 'lxml')
 
-                    id_list = soup.select('.nick')
+                    zzz = str(b_soup).split('var')
 
-                    for each in id_list:
+                    for i in range(len(zzz)):
+                        if 'blogNo' in zzz[i]:
+                            yyy = zzz[i]
+
+                    p = re.compile('blogNo\D*\d+')
+                    xxx = p.findall(yyy)
+                    q = re.compile('\d+')
+                    blog_no = int(q.findall(xxx[0])[0])
+
+
+                    header_2 = {
+                    'Referer':'https://blog.naver.com/PostList.nhn?blogId=&widgetTypeCall=true&directAccess=true'
+                    }
+
+                    res2 = requests.get('https://apis.naver.com/commentBox/cbox/web_naver_list_jsonp.json?ticket=blog&pool=cbox9&lang=ko&objectId={a}_201_{b}&groupId={a}'.format(a=blog_no, b= log_no), headers=header_2)
+
+                    json_data = res2.text.replace("_callback(","")
+                    json_data = json_data.replace(");","")
+
+                    js = json.loads(json_data) #str -> python으로 바꾼 것. 근데 본래 python dic 타입이였으므로 가능한 것임.
+
+
+                    for commentList in js['result']['commentList']:
                         try:
-                            a = each['href'].split('/')
-                            comment_id = a[3]
                             if self.radio1_2.isChecked():
-                                b_guest_email = comment_id
+                                b_guest_email = commentList['profileUserId']
                             else:
-                                b_guest_email = comment_id + '@naver.com'
+                                b_guest_email = commentList['profileUserId']+'@naver.com'
 
-                            self.save_email.append(b_guest_email)
 
-                            item = self.listWidget1_1.item(5)
-                            item.setText('수집된 이메일 수: {}개'.format(len(self.save_email)))
-                            QApplication.processEvents()
+                                self.save_email.append(b_guest_email)
 
-                            item = self.listWidget1_1.item(9)
-                            item.setText('중복 제거 후 이메일 {}개 저장 완료'.format(len(list(set(self.save_email)))))
-                            QApplication.processEvents()
+                                item = self.listWidget1_1.item(5)
+                                item.setText('수집된 이메일 수: {}개'.format(len(self.save_email)))
+                                QApplication.processEvents()
 
-                            pure_email = list(set(self.save_email))
+                                item = self.listWidget1_1.item(9)
+                                item.setText('중복 제거 후 이메일 {}개 저장 완료'.format(len(list(set(self.save_email)))))
+                                QApplication.processEvents()
 
-                            if self.radio1_2.isChecked():
-                                self.keyword_csv('id', pure_email)
-                            else:
-                                self.keyword_csv('email', pure_email)
+                                pure_email = list(set(self.save_email))
 
                         except:
                             continue
                 except:
                     continue
 
-
-
-        item = self.listWidget1_1.item(4)
-        item.setText('카페 활성유저 이메일 수집 중...')
-        QApplication.processEvents()
-
+#        item = self.listWidget.item(4)
+#        item.setText('카페 활성유저 이메일 수집 중...')
+#        QApplication.processEvents()
 
         ### 카페 시작 ###
 
-        for k in range(100):
-            item = self.listWidget1_1.item(7)
-            item.setText('{}/200페이지'.format(k+101))
-            QApplication.processEvents()
+#        for k in range(100):
+#            item = self.listWidget.item(7)
+#            item.setText('{}/200페이지'.format(k+101))
+#            QApplication.processEvents()
 
-            time.sleep(1.5)
+            #time.sleep(1.5)
 
-            c_page_number = k*10 + 1
-            c_url = 'https://search.naver.com/search.naver?where=article&ie=utf8&query={}&start={}&date_option=6'.format(keyword, c_page_number).encode('utf-8')
+
+            c_url = 'https://search.naver.com/search.naver?where=article&ie=utf8&query={}&start={}&date_option=6'.format(keyword, page_number).encode('utf-8')
             response = requests.get(c_url, headers = headers)
             html = response.text
             c_soup = BeautifulSoup(html, 'lxml')
@@ -925,7 +992,7 @@ class MyWindow(QMainWindow, form_class2):
                     article_id = aa[-1]
                     ## host ID ##
 
-                    time.sleep(0.3)
+                    #time.sleep(0.3)
 
                     url_host = 'http://cafe.naver.com/ArticleRead.nhn?&clubid={}&articleid={}'.format(club_id, article_id)
 
@@ -972,9 +1039,14 @@ class MyWindow(QMainWindow, form_class2):
                             self.keyword_csv('id', pure_email)
                         else:
                             self.keyword_csv('email', pure_email)
-
+                        #print('g', guest_email)
                 except:
                     continue
+
+        item = self.listWidget1_1.item(4)
+        item.setText('블로그/카페 활성유저 이메일 수집 완료')
+        QApplication.processEvents()
+
 
 
 

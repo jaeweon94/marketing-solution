@@ -42,14 +42,14 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>48</x>
+     <x>9</x>
      <y>17</y>
-     <width>161</width>
+     <width>240</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>시리얼 넘버를 입력해주세요</string>
+    <string>시리얼 넘버를 입력해주세요(최초 1회 인증)</string>
    </property>
   </widget>
  </widget>

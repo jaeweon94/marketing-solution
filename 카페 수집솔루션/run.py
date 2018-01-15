@@ -60,8 +60,6 @@ class MyWindow(QMainWindow, form_class):
 
 
     def btn1_clicked(self):
-        if not os.path.isdir('cafe_email'):
-            os.mkdir('cafe_email')
 
         list_number = self.listWidget2.currentRow()
 
@@ -116,64 +114,77 @@ class MyWindow(QMainWindow, form_class):
             item.setText("{b}/{a}".format(a=len(menu_url)-1,b=i))
             QApplication.processEvents()
 
+            last_page = self.lineEdit2.text()
+
 
             check_email_1 = []
-            for j in (a for a in range(2, 1000)): # generator
-                try:
-                    detail_url = menu_url[i] + '&userDisplay=50&search.page={}'.format(j)
-                    response = requests.get(detail_url)
-                    html = response.text
+            try:
+                for j in (a for a in range(2, int(last_page)+1)): # generator
+                    try:
+                        detail_url = menu_url[i] + '&userDisplay=50&search.page={}'.format(j)
+                        response = requests.get(detail_url)
+                        html = response.text
 
-                    soup2 = BeautifulSoup(html, 'lxml')
-                    a = soup2.select('.wordbreak')
+                        soup2 = BeautifulSoup(html, 'lxml')
+                        a = soup2.select('.wordbreak')
 
-                    check_email_2 = []
-                    apple = [] #중간에 끊기 위함// 이전 리스트 수
-                    ### 한 페이지의 이메일 긁어오기 ###
-                    for b in a:
-                        c = b['id']
-                        d = str(c).split('_')
+                        check_email_2 = []
+                        apple = [] #중간에 끊기 위함// 이전 리스트 수
+                        ### 한 페이지의 이메일 긁어오기 ###
+                        for b in a:
+                            c = b['id']
+                            d = str(c).split('_')
 
+                            if self.radio2.isChecked():
+                                email = d[1] ## 쪽지용은 네이버닷컴 추가 X
+                            else:
+                                email = d[1]+ '@naver.com'
+
+
+                            if j <= 5:
+                                check_email_1.append(email)
+                            if j > 5:
+                                check_email_2.append(email)
+
+
+                            all_email.append(email)
+                            pure_email = list(set(all_email))
+                            apple.append(email)
+
+                            item = self.listWidget.item(3)
+                            item.setText("총 수집된 이메일 수 {}개".format(len(all_email)))
+                            QApplication.processEvents()
+
+                            item = self.listWidget.item(6)
+                            item.setText("중복 이메일 제거 후 {}개 저장 완료".format(len(pure_email)))
+                            QApplication.processEvents()
+
+                            ### make a csv file named cafe name ###
                         if self.radio2.isChecked():
-                            email = d[1] ## 쪽지용은 네이버닷컴 추가 X
+                            with open("id/cafe_{}_{}.csv".format(keyword, number1), "w", newline='', encoding='euc-kr') as f:
+                                writer = csv.writer(f)
+                                for email in pure_email:
+                                    writer.writerow([email])
+
                         else:
-                            email = d[1]+ '@naver.com'
+                            with open("email/cafe_{}_{}.csv".format(keyword, number1), "w", newline='', encoding='euc-kr') as f:
+                                writer = csv.writer(f)
+                                for email in pure_email:
+                                    writer.writerow([email])
 
 
-                        if j <= 5:
-                            check_email_1.append(email)
-                        if j > 5:
-                            check_email_2.append(email)
+                        pure_check_1 = list(set(check_email_1))
+                        pure_check_2 = list(set(check_email_2))
+                        if len(pure_check_1) == len(pure_check_2):
+                            break
 
-
-                        all_email.append(email)
-                        pure_email = list(set(all_email))
-                        apple.append(email)
-
-                        item = self.listWidget.item(3)
-                        item.setText("총 수집된 이메일 수 {}개".format(len(all_email)))
-                        QApplication.processEvents()
-
-                        item = self.listWidget.item(6)
-                        item.setText("중복 이메일 제거 후 {}개 저장 완료".format(len(pure_email)))
-                        QApplication.processEvents()
-
-                        ### make a csv file named cafe name ###
-                    with open("cafe_email/cafe_{}_{}.csv".format(keyword, number1), "w", newline='', encoding='euc-kr') as f:
-                        writer = csv.writer(f)
-                        for email in pure_email:
-                            writer.writerow([email])
-
-
-                    pure_check_1 = list(set(check_email_1))
-                    pure_check_2 = list(set(check_email_2))
-                    if len(pure_check_1) == len(pure_check_2):
-                        break
-
-                    if len(apple) == 0: ## 이후 == 이전 같으면 종료
-                        break
-                except:
-                    continue
+                        if len(apple) == 0: ## 이후 == 이전 같으면 종료
+                            break
+                    except:
+                        continue
+            except ValueError:
+                QMessageBox.about(self, 'Message', '숫자를 입력해주세요.')
+                break
         ## when we click button, all we have to do is send to line Edit's content. so, we don't need to line edit f
 
 
@@ -185,30 +196,16 @@ class MyWindow(QMainWindow, form_class):
         item.setText("이메일 수집이 모두 완료되었습니다.")
         QApplication.processEvents()
 
-        time.sleep(3)
-
-        for i in range(0,7):
-            item = self.listWidget.item(i)
-            item.setText("")
-        QApplication.processEvents()
-
-
-        for i in range(1,601):
-            time.sleep(1)
-            item = self.listWidget.item(4)
-            item.setText("{}초만 쉬세요".format(600-i))
-            QApplication.processEvents()
-
-        item = self.listWidget.item(4)
-        item.setText("다시 작업하셔도 좋습니다!")
-        QApplication.processEvents()
-
-
-
-
 
 
 if __name__ == "__main__":
+
+    if not os.path.isdir('email'):
+        os.mkdir('email')
+
+    if not os.path.isdir('id'):
+        os.mkdir('id')
+
     app = QApplication(sys.argv)
     myWindow = MyWindow()
     myWindow.show()

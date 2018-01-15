@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 import time
 import sys
 import re
+import json
+
 
 form_class = uic.loadUiType("main_window.ui")[0]
 
@@ -115,10 +117,6 @@ class MyWindow(QMainWindow, form_class):
         self.save_email = [] #클릭 누를 때마다 초기화
 
 
-        if not os.path.isdir('blog_email'):
-            os.mkdir('blog_email')
-
-
         list_number = self.listWidget2.currentRow()
 
         if list_number == 0:
@@ -165,32 +163,52 @@ class MyWindow(QMainWindow, form_class):
                 item.setText("{}/{}".format(j, page_number))
                 QApplication.processEvents()
 
-
+                time.sleep(0.5)
                 url_2 = "http://blog.naver.com/PostList.nhn?from=postList&blogId={}&categoryNo={}&currentPage={}".format(self.blog_name, category_n, j)
                 soup_2 = self.call_url(url_2)
-                a = soup_2.select('iframe')
 
-                for b in a:
-                    if 'CommentFrm' in str(b):
-                        c = b
-                #type(c)  bs4.element.Tag라는 type이군. 그래서 None으로 뜨는 듯!
+                a= soup_2.select('p.url')
+                b= a[0]['id']
+                c= b.split('_')
 
-                p = re.compile('\d+') # \D는 숫자 뻬고, \d는 0-9 숫자 +는 1개 이상, *는 0개 이상
-                log_number = int(p.findall(c['id'])[0]) #0383496209 이런 거
+                log_number = int(c[2]) #0383496209 이런 거
 
-                url_3 = 'http://blog.naver.com/CommentList.nhn?blogId={}&logNo={}&currentPage=&isMemolog=false&focusingCommentNo=&showLastPage=true&shortestContentAreaWidth=false'.format(self.blog_name,log_number)
-                soup_3 = self.call_url(url_3)
 
-                id_list = soup_3.select('.nick')
+                b_url2 = 'https://blog.naver.com/PostView.nhn?blogId={}&logNo={}'.format(self.blog_name, log_number)
+                response = requests.get(b_url2)
+                html = response.text
+                b_soup = BeautifulSoup(html, 'lxml')
 
-                for each in id_list:
+                zzz = str(b_soup).split('var')
+
+                for i in range(len(zzz)):
+                    if 'blogNo' in zzz[i]:
+                        yyy = zzz[i]
+
+                p = re.compile('blogNo\D*\d+')
+                xxx = p.findall(yyy)
+                q = re.compile('\d+')
+                blog_no = int(q.findall(xxx[0])[0])
+
+
+                header_2 = {
+                'Referer':'https://blog.naver.com/PostList.nhn?blogId=&widgetTypeCall=true&directAccess=true'
+                }
+
+                res2 = requests.get('https://apis.naver.com/commentBox/cbox/web_naver_list_jsonp.json?ticket=blog&pool=cbox9&lang=ko&objectId={a}_201_{b}&groupId={a}'.format(a=blog_no, b= log_number), headers=header_2)
+
+                json_data = res2.text.replace("_callback(","")
+                json_data = json_data.replace(");","")
+
+                js = json.loads(json_data) #str -> python으로 바꾼 것. 근데 본래 python dic 타입이였으므로 가능한 것임.
+
+
+                for commentList in js['result']['commentList']:
                     try:
-                        a = each['href'].split('/')
-
                         if self.radio2.isChecked():
-                            email = a[3]
+                            email = commentList['profileUserId']
                         else:
-                            email = a[3] + '@naver.com'
+                            email = commentList['profileUserId']+'@naver.com'
 
                         self.save_email.append(email)
 
@@ -209,7 +227,12 @@ class MyWindow(QMainWindow, form_class):
                     except:
                         continue
                 pure_email = list(set(self.save_email))
-                self.save_csv(pure_email)
+
+                if self.radio2.isChecked():
+                    self.blog_csv('id', pure_email)
+                else:
+                    self.blog_csv('email', pure_email)
+
         except IndexError:
             QMessageBox.about(self, 'Message', '수집할 이메일이 없습니다.')
 
@@ -252,6 +275,8 @@ class MyWindow(QMainWindow, form_class):
             k=1  #프로그램이 작업 중이라 중간에 작업을 끝내려면 X키를 눌러서 종료하셔야합니다. 조금만 기다려주세요!
             while True:
                 try:
+                    time.sleep(0.5)
+
                     apple = []
                     follower_url = 'http://section.blog.naver.com/connect/{}.nhn?blogId={}&currentPage={}&targetBlogNo={}'.format(kind,self.blog_name, k, gs_number)
 
@@ -299,23 +324,35 @@ class MyWindow(QMainWindow, form_class):
                         break
                     k += 1
                     pure_email = list(set(self.save_email))
-                    self.save_csv(pure_email)
+
+                    if self.radio2.isChecked():
+                        self.blog_csv('id', pure_email)
+                    else:
+                        self.blog_csv('email', pure_email)
+
                 except:
                     continue
         except IndexError:
             QMessageBox.about(self, 'Message', '이웃을 공개하지 않는 블로거입니다.')
 
 
-
-
-    def save_csv(self, email_list):
-        with open('blog_email/blog_{}_{}.csv'.format(self.blog_name,self.listWidget2.currentRow()+1), 'w', newline='', encoding='euc-kr') as f:
+    def blog_csv(self, method, email_list):
+        with open('{}/blog_{}_{}.csv'.format(method,self.blog_name,self.listWidget2.currentRow()+1), 'w', newline='', encoding='euc-kr') as f:
             writer = csv.writer(f)
             for each_email in email_list:
                 writer.writerow([each_email])
 
 
+
 if __name__ == "__main__":
+
+    if not os.path.isdir('email'):
+        os.mkdir('email')
+
+    if not os.path.isdir('id'):
+        os.mkdir('id')
+
+
     app = QApplication(sys.argv)
     myWindow = MyWindow()
     myWindow.show()

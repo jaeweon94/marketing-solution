@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>418</height>
+    <height>478</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -35,8 +35,8 @@
    <widget class="QPushButton" name="pushButton1">
     <property name="geometry">
      <rect>
-      <x>432</x>
-      <y>280</y>
+      <x>433</x>
+      <y>365</y>
       <width>75</width>
       <height>40</height>
      </rect>
@@ -74,8 +74,8 @@
    <widget class="QPushButton" name="pushButton2">
     <property name="geometry">
      <rect>
-      <x>514</x>
-      <y>280</y>
+      <x>515</x>
+      <y>365</y>
       <width>75</width>
       <height>40</height>
      </rect>
@@ -87,8 +87,8 @@
    <widget class="QRadioButton" name="radio1">
     <property name="geometry">
      <rect>
-      <x>430</x>
-      <y>228</y>
+      <x>431</x>
+      <y>315</y>
       <width>161</width>
       <height>16</height>
      </rect>
@@ -103,8 +103,8 @@
    <widget class="QRadioButton" name="radio2">
     <property name="geometry">
      <rect>
-      <x>430</x>
-      <y>248</y>
+      <x>431</x>
+      <y>335</y>
       <width>161</width>
       <height>16</height>
      </rect>
@@ -126,8 +126,8 @@
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>405</x>
-      <y>205</y>
+      <x>406</x>
+      <y>290</y>
       <width>221</width>
       <height>20</height>
      </rect>
@@ -166,9 +166,9 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>169</y>
+      <y>170</y>
       <width>331</width>
-      <height>171</height>
+      <height>247</height>
      </rect>
     </property>
     <property name="font">
@@ -275,6 +275,16 @@
     </item>
     <item>
      <property name="text">
+      <string/>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string/>
+     </property>
+    </item>
+    <item>
+     <property name="text">
       <string>중간에 종료하셔도 그때까지 수집한 이메일이 저장됩니다.</string>
      </property>
      <property name="font">
@@ -293,7 +303,7 @@
       <x>390</x>
       <y>50</y>
       <width>241</width>
-      <height>291</height>
+      <height>368</height>
      </rect>
     </property>
     <property name="title">
@@ -322,12 +332,25 @@
       </rect>
      </property>
     </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>24</x>
+       <y>160</y>
+       <width>201</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>3. 원하시는 페이지를 입력해주세요.</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QLabel" name="label_9">
     <property name="geometry">
      <rect>
-      <x>464</x>
-      <y>340</y>
+      <x>462</x>
+      <y>417</y>
       <width>171</width>
       <height>20</height>
      </rect>
@@ -339,8 +362,8 @@
    <widget class="QLabel" name="label_10">
     <property name="geometry">
      <rect>
-      <x>34</x>
-      <y>342</y>
+      <x>35</x>
+      <y>420</y>
       <width>121</width>
       <height>20</height>
      </rect>
@@ -392,13 +415,65 @@
     <property name="geometry">
      <rect>
       <x>491</x>
-      <y>357</y>
+      <y>433</y>
       <width>141</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
      <string>wowon7975@naver.com</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit2">
+    <property name="geometry">
+     <rect>
+      <x>488</x>
+      <y>239</y>
+      <width>61</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_26">
+    <property name="geometry">
+     <rect>
+      <x>500</x>
+      <y>263</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>(최대 1000쪽)</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_13">
+    <property name="geometry">
+     <rect>
+      <x>429</x>
+      <y>243</y>
+      <width>56</width>
+      <height>12</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>페이지수:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_27">
+    <property name="geometry">
+     <rect>
+      <x>551</x>
+      <y>241</y>
+      <width>41</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>쪽까지</string>
     </property>
    </widget>
    <zorder>groupBox_2</zorder>
@@ -419,6 +494,10 @@
    <zorder>label_8</zorder>
    <zorder>pushButton0</zorder>
    <zorder>label_12</zorder>
+   <zorder>lineEdit2</zorder>
+   <zorder>label_26</zorder>
+   <zorder>label_13</zorder>
+   <zorder>label_27</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -430,7 +509,6 @@
     </rect>
    </property>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>
